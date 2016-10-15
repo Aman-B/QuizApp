@@ -16,13 +16,13 @@
             </intent-filter>
         </activity>
         <activity android:name=".ResultActivity" />
-        <activity android:name=".FirebaseTest">
-         <!--   <intent-filter>
+      <!--  <activity android:name=".FirebaseTest">
+         &lt;!&ndash;   <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>-->
-        </activity>
+            </intent-filter>&ndash;&gt;
+        </activity>-->
     </application>
 
 </manifest>

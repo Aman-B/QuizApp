@@ -7,39 +7,33 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.v4.app.FragmentTransaction;
+import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.Toast;
 
 import com.example.aman.quizforlab.database.DBContract;
 import com.example.aman.quizforlab.database.DBHelper;
 import com.example.aman.quizforlab.fragments.QuestionFragment;
-import com.example.aman.quizforlab.fragments.ResultFragment;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.GenericTypeIndicator;
-import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity
         extends AppCompatActivity
-        implements View.OnClickListener,QuestionFragment.onQuestionChangeRequestedListener {
+        implements View.OnClickListener,QuestionFragment.onQuestionChangeRequestedListener,CallbackForUI {
 
 
-    
+
     int question_number=0;
     Button btn_nextfragment,btn_preivousfragment;
     List<Question> questions;
     int mscore=0;
     int position,selectedId;
-    ScoreKeeper mScoreKeeper;
+    SelectedIdKeeper mSelectedIdKeeper;
 
     ArrayList<Integer> answers= new ArrayList<>();
     Bundle msavedInstanceState;
@@ -51,38 +45,65 @@ public class MainActivity
     List <Question>questionArrayList;
     ProgressDialog ringProgressDialog;
     static boolean calledAlready = false;
+    View mFragmentContainer;
+    FragmentManager supportFragmentManager;
+    FragmentHandler mFragmentHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         msavedInstanceState = savedInstanceState;
         setupAnimationWindows();
-        // overridePendingTransition(R.transition.fadein,R.transition.fadeout);
 
         setContentView(R.layout.activity_main);
+        ringProgressDialog= new ProgressDialog(MainActivity.this);
+        ringProgressDialog.setMessage("Loading...");
+        ringProgressDialog.show();
         this.getSupportActionBar().show();
-        /*setupAnimationWindows();*/
-        mScoreKeeper = new ScoreKeeper();
-        mScoreKeeper.fillListWithDummySelectedIds();
-        // mscore=mScoreKeeper.getmScore();
 
-        //getApplicationContext().deleteDatabase("Quiz.db");
+        //To get the selected Id of radio button and retain it when user comes back to the fragment.
+        mSelectedIdKeeper = new SelectedIdKeeper();
+        mSelectedIdKeeper.fillListWithDummySelectedIds();
+
+        //For fragment handling
+        supportFragmentManager= getSupportFragmentManager();
+        mFragmentHandler= new FragmentHandler();
+
+
+
+        initUIComponents();
+
+       /* ringProgressDialog.setMessage("Loading Questions...");
+        ringProgressDialog.setTitle("Loading title...");
+        ringProgressDialog.show();
+        ringProgressDialog.setCancelable(true);*/
+        setButtonVisbility(View.GONE);
+
+        initData();
+
+
+
+
+    }
+
+    private void initUIComponents() {
+
+        mFragmentContainer=(View) findViewById(R.id.fragment_container);
+
         btn_nextfragment = (Button) findViewById(R.id.button_next_fragment);
         btn_preivousfragment = (Button) findViewById(R.id.button_previous_fragment);
 
         btn_nextfragment.setOnClickListener(this);
         btn_preivousfragment.setOnClickListener(this);
+    }
 
-        //firebaseDb = new FirebaseDb();
-
-        init();
-
-
-
-
-    } public void init()
+    public void initData()
     {
-        quesListGenericTypeIndicator
+
+        FirebaseDb firebaseDb = new FirebaseDb(this);
+        firebaseDb.init();
+       // showUI(questionArrayList);
+        /*quesListGenericTypeIndicator
                 =new GenericTypeIndicator<List<Question>>() {};
 
         if(!calledAlready) {
@@ -98,21 +119,17 @@ public class MainActivity
         mQuestionReference.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                btn_nextfragment.setVisibility(View.GONE);
-                btn_nextfragment.setVisibility(View.GONE);
-                ringProgressDialog= new ProgressDialog(MainActivity.this);
-                ringProgressDialog.setMessage("Loading Questions...");
-                ringProgressDialog.show();
-                ringProgressDialog.setCancelable(true);
+                //hide buttons
+
+
 
 
                 questionArrayList = dataSnapshot.getValue(quesListGenericTypeIndicator);
                 Log.i("Mtag", ""+questionArrayList);
                 Log.i("Mytag", " "+questionArrayList.get(0).getQUESTION());
                 //return list here
-                showUI();
-                initAnswers();
 
+                showUI();
 
             }
 
@@ -120,71 +137,41 @@ public class MainActivity
             public void onCancelled(DatabaseError databaseError) {
                 // Failed to read value
                 Log.w("mTag", "Failed to read value.", databaseError.toException());
+                showUI();
 
             }
-        });
+        });*/
 
 //        Log.i("Mytag", " "+questionArrayList.get(0).getQUESTION());
        /* return questionArrayList;*/
     }
 
-    private void showUI() {
-        questions=questionArrayList;
-        Log.i("Questions ", " : " + questions);
-        for (Question q : questions) {
-            Log.i("Qdetails : ", "" + q.getQUESTION().toString());
-        }
-        ringProgressDialog.dismiss();
-        btn_nextfragment.setVisibility(View.VISIBLE);
-        btn_preivousfragment.setVisibility(View.VISIBLE);
+    private void setButtonVisbility(int buttonVisbility) {
+        btn_nextfragment.setVisibility(buttonVisbility);
+        btn_nextfragment.setVisibility(buttonVisbility);
+
+
+    }
+
+
+    private void createFirstFragment() {
         // Check that the activity is using the layout version with
         // the fragment_container FrameLayout
-        if (findViewById(R.id.fragment_container) != null) {
 
-            // However, if we're being restored from a previous state,
-            // then we don't need to do anything and should return or else
-            // we could end up with overlapping fragments.
-            if (msavedInstanceState != null) {
-                return;
-            }
-
-            // Create a new Fragment to be placed in the activity layout
-
-            QuestionFragment firstFragment = new QuestionFragment();
-
-            // In case this activity was started with special instructions from an
-            // Intent, pass the Intent's extras to the fragment as arguments
-            Bundle bundle = new Bundle();
-            bundle.putInt("question_number", question_number);
-            bundle.putSerializable("question_object", questions.get(0));
-            firstFragment.setArguments(bundle);
-
-
-            // Add the fragment to the 'fragment_container' FrameLayout
-            getSupportFragmentManager().beginTransaction()
-                    .addToBackStack(null)
-                    .add(R.id.fragment_container, firstFragment).commit();
-
-        }
-
+        Log.i("selectedidkeeper as : "," "+mSelectedIdKeeper);
+        mFragmentHandler.createFirstFragment(mFragmentContainer,msavedInstanceState,supportFragmentManager,
+                mSelectedIdKeeper,
+                R.id.fragment_container,question_number,questions,answers);
 
     }
 
-    public List<Question> getQuestionsList(){
-        return questionArrayList  ;
-    }
 
 
 
-    private List<Question> getDataFromFirebase()
-    {
-        firebaseDb= new FirebaseDb();
 
-        return firebaseDb.getQuestionsList();
-
-    }
 
     private void setupAnimationWindows() {
+        //TODO: Do something about this later.
        /* Transition exitTrans = new Explode();
         getWindow().setExitTransition(exitTrans);*/
        /* Transition reenterTrans1 = new Slide();
@@ -203,10 +190,9 @@ public class MainActivity
 
     private void initAnswers() {
         //question size used here
-        for(int i=0;i<questions.size();i++)
-        {
-            answers.add(-1);
-        }
+       AnswerHandler answerHandler= new AnswerHandler();
+        answerHandler.initAnswers(answers,questions.size());
+        createFirstFragment();
     }
 
     public  void setAnswers(int index,int value)
@@ -219,52 +205,10 @@ public class MainActivity
 
         return answers;
     }
-    public void setSelectedId(int selectedId)
-    {
-        position=(question_number);
-        mScoreKeeper.setSelectedId(position,selectedId);
 
 
-    }
 
-    public int getSelectedId(int question_num)
-    {
-        selectedId=mScoreKeeper.getSelectedId(question_num);
-        return selectedId;
-    }
 
-    private void replaceFragment(Question question) {
-        // Create fragment and give it an argument specifying the article it should show
-        QuestionFragment newFragment = new QuestionFragment();
-        Bundle args = new Bundle();
-        args.putInt("question_number",question_number);
-        args.putSerializable("question_object",question);
-        newFragment.setArguments(args);
-
-        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-
-// Replace whatever is in the fragment_container view with this fragment,
-// and add the transaction to the back stack so the user can navigate back
-        transaction.replace(R.id.fragment_container, newFragment);
-       // transaction.addToBackStack(null);
-
-// Commit the transaction
-        transaction.commit();
-
-       /* DBHelper dbHelper=new DBHelper(getApplicationContext());
-        SQLiteDatabase db=dbHelper.getReadableDatabase();
-        Cursor c = db.query(
-                DBContract.DBEntry.TABLE_NAME,                     // The table to query
-                null,                               // The columns to return
-                DBContract.DBEntry._ID+" = ?",                                // The columns for the WHERE clause
-                new String[]{"1"},                            // The values for the WHERE clause
-                null,                                     // don't group the rows
-                null,                                     // don't filter by row groups
-                null                                 // The sort order
-        );*/
-
-        //TODO: connect db with fragment.Also, make UI for fragment.
-     }
 
     @Override
     public void onClick(View view) {
@@ -276,20 +220,18 @@ public class MainActivity
                 if(question_number==4)
                 {
                     getFinalScore();
-                    Toast.makeText(getApplicationContext(),"Nothing to go forward to! Score : "+mscore,Toast.LENGTH_SHORT).show();
 
+                    //  Toast.makeText(getApplicationContext(),"Nothing to go back to! Score :"+" "+mscore,Toast.LENGTH_SHORT).show();
+                    Log.i("Score : ", ""+mscore);
+                    Intent i = new Intent(this,ResultActivity.class);
+                    //for smooth tranisition
 
-                    ResultFragment newFragment=ResultFragment.newInstance(mscore);
-
-                    FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-
-// Replace whatever is in the fragment_container view with this fragment,
-// and add the transaction to the back stack so the user can navigate back
-                    transaction.replace(R.id.fragment_container, newFragment);
-                    transaction.addToBackStack(null);
-
-// Commit the transaction
-                    transaction.commit();
+                    Bundle bundle = ActivityOptions.makeSceneTransitionAnimation(this).toBundle();
+                    i.putExtra("score",mscore);
+                   /* Bundle bndlanimation =
+                            ActivityOptions.makeCustomAnimation(getApplicationContext(), this).toBundle();*/
+                    this.startActivity(i,bundle);
+                    // overridePendingTransition(R.anim.pull_in_left,R.anim.push_out_right);
                 }
                 else {
                     onQuestionChangeRequested(questions.get(++question_number));
@@ -339,8 +281,12 @@ public class MainActivity
 
     @Override
     public void onQuestionChangeRequested(Question question) {
-        replaceFragment(question);
+        mFragmentHandler.replaceFragment(supportFragmentManager,R.id.fragment_container,
+                mSelectedIdKeeper,
+                question_number,question,answers);
+
     }
+
     private List<Question> getDataFromDatabase() {
 
         List<Question> questionList=new ArrayList<Question>();
@@ -369,9 +315,32 @@ public class MainActivity
 
 
     }
+
+    @Override
+    public void showUI(List<Question> questionArrayList) {
+        if(questionArrayList!=null) {
+            questions = questionArrayList;
+        }
+        else
+        {
+            //In case firebase doesn't work, show data from db.
+            Log.i("Data from ", "Db");
+            questions=getDataFromDatabase();
+        }
+        Log.i("Questions ", " : " + questions);
+        for (Question q : questions) {
+            Log.i("Qdetails : ", "" + q.getQUESTION().toString());
+        }
+        ringProgressDialog.dismiss();
+        //Got data. Show buttons.
+        setButtonVisbility(View.VISIBLE);
+
+
+        initAnswers();
+    }
 }
 
-//TODO: 1. Clean the code as much as possible. Remove all unecessary stuff. Like Db and extra classes etc.
-//TODO: 2. Do something about firebase call, make it more cleaner.
+//TODO: 1. Clean the code as much as possible. Remove all unnecessary stuff. Like Db and extra classes etc.
+//TODO: 2. Make a class for answer init and other stuff.
 //TODO: 3. Give proper functions to buttons.
 //TODO: 4. Work on UI. Make it beautiful.

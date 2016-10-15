@@ -16,6 +16,9 @@ import android.widget.Toast;
 import com.example.aman.quizforlab.MainActivity;
 import com.example.aman.quizforlab.Question;
 import com.example.aman.quizforlab.R;
+import com.example.aman.quizforlab.SelectedIdKeeper;
+
+import java.util.ArrayList;
 
 import static com.example.aman.quizforlab.R.id.radioGroup;
 
@@ -23,7 +26,7 @@ import static com.example.aman.quizforlab.R.id.radioGroup;
  * Created by Aman on 10/9/2016.
  */
 
-public class QuestionFragment extends Fragment implements RadioGroup.OnCheckedChangeListener {
+public class QuestionFragment extends Fragment implements RadioGroup.OnCheckedChangeListener{
 
     onQuestionChangeRequestedListener mCallback;
 
@@ -34,6 +37,13 @@ public class QuestionFragment extends Fragment implements RadioGroup.OnCheckedCh
     int mscore;
     int question_number=-1;
     int got_checkedId;
+
+    SelectedIdKeeper mSelectedIdKeeper;
+    boolean isChecked;
+
+    ArrayList<Integer> manswers= new ArrayList<>();
+
+
 
     // Container Activity must implement this interface
     public interface onQuestionChangeRequestedListener {
@@ -50,18 +60,22 @@ public class QuestionFragment extends Fragment implements RadioGroup.OnCheckedCh
             mCallback = (onQuestionChangeRequestedListener) context;
         } catch (ClassCastException e) {
             throw new ClassCastException(context.toString()
-                    + " must implement OnHeadlineSelectedListener");
+                    + " must implement onQuestionChangeRequestedListener");
         }
     }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+      //  mSelectedIdKeeper= new SelectedIdKeeper();
 
         if(getArguments()!=null)
         {
             question=(Question) getArguments().getSerializable("question_object");
             question_number=getArguments().getInt("question_number");
+            manswers=getArguments().getIntegerArrayList("answers");
+            mSelectedIdKeeper=(SelectedIdKeeper) getArguments().getSerializable("selectedIdKeeper_object");
+            Log.i("Gote selectedid"," "+mSelectedIdKeeper);
         }
 
     }
@@ -96,7 +110,8 @@ public class QuestionFragment extends Fragment implements RadioGroup.OnCheckedCh
    //     mscore=((MainActivity)getActivity()).getScore();
         if(question_number!=-1)
         {
-            if((got_checkedId=((MainActivity)getActivity()).getSelectedId(question_number))!=-1)
+            got_checkedId=mSelectedIdKeeper.getSelectedId(question_number);
+            if(got_checkedId!=-1)
             {
                 Log.i("Question number : ", " "+question_number);
                 mRadioGroup.check(got_checkedId);
@@ -115,7 +130,9 @@ public class QuestionFragment extends Fragment implements RadioGroup.OnCheckedCh
 
         RadioButton radioButton = (RadioButton) getActivity().findViewById(checkedId);
 
-        ((MainActivity)getActivity()).setSelectedId(checkedId);
+
+            mSelectedIdKeeper.setSelectedId(question_number, checkedId);
+
 
 
 

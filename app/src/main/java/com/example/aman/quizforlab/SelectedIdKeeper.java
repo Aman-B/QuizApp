@@ -1,17 +1,16 @@
 package com.example.aman.quizforlab;
 
-import android.app.Application;
-
+import java.io.Serializable;
 import java.util.ArrayList;
 
 /**
  * Created by Aman on 10/9/2016.
  */
 
-public class ScoreKeeper extends Application  {
+public class SelectedIdKeeper implements  Serializable {
 
 
-    private int mScore=0;
+
 
 
 
@@ -27,13 +26,7 @@ public class ScoreKeeper extends Application  {
         }
     }
 
-    public int getmScore() {
-        return mScore;
-    }
 
-    public void setmScore(int mScore) {
-        this.mScore = mScore;
-    }
 
     public int getSelectedId(int position) {
         if(selectedId.isEmpty())
@@ -46,8 +39,8 @@ public class ScoreKeeper extends Application  {
 
     }
 
-    public void setSelectedId(int position, int value) {
-        selectedId.set(position,value);
+    public void setSelectedId(int question_number, int selectedId) {
+        this.selectedId.set(question_number,selectedId);
     }
 
 

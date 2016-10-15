@@ -11,6 +11,8 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.util.List;
 
+import static com.example.aman.quizforlab.MainActivity.calledAlready;
+
 /**
  * Created by Aman on 10/15/2016.
  */
@@ -21,13 +23,23 @@ public class FirebaseDb {
     GenericTypeIndicator<List<Question>> quesListGenericTypeIndicator;
 
     List <Question>questionArrayList;
+
+    private CallbackForUI mCallbackForUI;
+
+    public FirebaseDb(MainActivity mainActivity) {
+        mCallbackForUI=mainActivity;
+    }
+
+
     public List<Question> init()
     {
         quesListGenericTypeIndicator
                 =new GenericTypeIndicator<List<Question>>() {};
 
-        FirebaseDatabase.getInstance().setPersistenceEnabled(true);
-        mFirebaseDatabase= FirebaseDatabase.getInstance();
+        if(!calledAlready) {
+            FirebaseDatabase.getInstance().setPersistenceEnabled(true);
+            calledAlready=true;
+        }        mFirebaseDatabase= FirebaseDatabase.getInstance();
 
         DatabaseReference mDatabaseReference= mFirebaseDatabase.getReference();
 
@@ -44,6 +56,7 @@ public class FirebaseDb {
                 Log.i("Mtag", ""+questionArrayList);
                 Log.i("Mytag", " "+questionArrayList.get(0).getQUESTION());
                 //return list here
+                mCallbackForUI.showUI(questionArrayList);
 
 
             }
@@ -52,6 +65,7 @@ public class FirebaseDb {
             public void onCancelled(DatabaseError databaseError) {
                 // Failed to read value
                 Log.w("mTag", "Failed to read value.", databaseError.toException());
+                mCallbackForUI.showUI(questionArrayList);
 
             }
         });

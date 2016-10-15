@@ -2,6 +2,8 @@ package com.example.aman.quizforlab;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.transition.Explode;
+import android.transition.Transition;
 import android.widget.TextView;
 
 public class ResultActivity extends AppCompatActivity{
@@ -32,8 +34,9 @@ public class ResultActivity extends AppCompatActivity{
     }
 
     private void setupWindowAnimations() {
-       /* Transition trans = new Explode();
-        getWindow().setEnterTransition(trans);*/
+        Transition trans = new Explode();
+        trans.setDuration(150);
+        getWindow().setEnterTransition(trans);
 
        /* Transition returnTrans1 = new Slide();
         returnTrans1.setDuration(500);
